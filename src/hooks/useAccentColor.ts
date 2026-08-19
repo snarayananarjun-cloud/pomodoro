@@ -30,7 +30,7 @@ export function useAccentColor(userId: string | null) {
   const [accent, setAccent] = useState(DEFAULT_ACCENT);
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || !supabase) {
       setAccent(DEFAULT_ACCENT);
       return;
     }
@@ -57,7 +57,7 @@ export function useAccentColor(userId: string | null) {
 
   const persist = useCallback(
     (next: typeof DEFAULT_ACCENT) => {
-      if (!userId) return;
+      if (!userId || !supabase) return;
       supabase
         .from('profiles')
         .upsert(

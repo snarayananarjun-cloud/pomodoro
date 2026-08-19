@@ -38,7 +38,7 @@ export function useSessionHistory(userId: string | null) {
   const [sessions, setSessions] = useState<FocusSession[]>([]);
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || !supabase) {
       setSessions([]);
       return;
     }
@@ -63,7 +63,7 @@ export function useSessionHistory(userId: string | null) {
 
   const addSession = useCallback(
     (note: string | null) => {
-      if (!userId) return;
+      if (!userId || !supabase) return;
       const completedAt = Date.now();
       const optimisticId = makeId();
       setSessions((prev) => [...prev, { id: optimisticId, completedAt, note }]);

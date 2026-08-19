@@ -48,6 +48,19 @@ function App() {
 
   const selectedDaySessions = selectedDay != null ? monthData.days.find((d) => d.day === selectedDay)?.sessions ?? [] : [];
 
+  if (auth.configError) {
+    return (
+      <div className="app-shell">
+        <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32, boxSizing: 'border-box' }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: '#8A7B70', textAlign: 'center', maxWidth: 300, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#1A1A1A', marginBottom: 8 }}>Setup needed</div>
+            {auth.configError}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (auth.loading) {
     return <div className="app-shell" />;
   }
