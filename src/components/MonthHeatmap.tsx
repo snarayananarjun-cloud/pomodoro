@@ -2,14 +2,15 @@ import { CaretLeft, CaretRight } from '@phosphor-icons/react';
 import type { MonthDay } from '../hooks/useSessionHistory';
 import { monthLabel } from '../lib/date';
 
-const LEVEL_COLORS = ['#F1E7DC', '#E7C9B9', '#DCA791', '#D28A6D', '#C97B63'];
+/** Fill strength grows with session count so busier days read as visibly stronger. */
+function cellBackground(count: number, accent: string): string {
+  if (count === 0) return '#FFFFFF';
+  const strength = Math.min(1, 0.32 + count * 0.17);
+  return `color-mix(in srgb, ${accent} ${Math.round(strength * 100)}%, #FFFFFF)`;
+}
 
-function levelFor(count: number): number {
-  if (count === 0) return 0;
-  if (count <= 1) return 1;
-  if (count <= 2) return 2;
-  if (count <= 3) return 3;
-  return 4;
+function cellBorder(count: number, accent: string): string {
+  return count === 0 ? '1px solid rgba(26,26,26,0.12)' : `1px solid color-mix(in srgb, ${accent} 45%, rgba(26,26,26,0.12))`;
 }
 
 interface Props {
@@ -68,7 +69,14 @@ export function MonthHeatmap({ offset, year, month, days, accentColor, onPrev, o
             onClick={() => onDayClick(d.day)}
             role="button"
             aria-label={`${monthLabel(year, month)} ${d.day}, ${d.count} session${d.count === 1 ? '' : 's'}`}
-            style={{ aspectRatio: '1', borderRadius: 6, background: LEVEL_COLORS[levelFor(d.count)], cursor: 'pointer' }}
+            style={{
+              aspectRatio: '1',
+              borderRadius: 6,
+              background: cellBackground(d.count, accentColor),
+              border: cellBorder(d.count, accentColor),
+              boxSizing: 'border-box',
+              cursor: 'pointer',
+            }}
           />
         ))}
       </div>

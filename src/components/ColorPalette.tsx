@@ -98,7 +98,7 @@ export function ColorPalette({ accentColor, presets, hue, sat, open, onToggle, o
             <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: '#8A7B70', marginBottom: 10 }}>
               Presets
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', justifyItems: 'center', gap: 12, marginBottom: 14 }}>
               {presets.map((color) => (
                 <div
                   key={color}
