@@ -26,6 +26,13 @@ function App() {
   const goTimer = useCallback(() => setScreen('timer'), []);
   const togglePalette = useCallback(() => setPaletteOpen((open) => !open), []);
   const closePalette = useCallback(() => setPaletteOpen(false), []);
+  const selectPreset = useCallback(
+    (color: string) => {
+      accent.selectPreset(color);
+      setPaletteOpen(false);
+    },
+    [accent],
+  );
 
   const prevWeek = useCallback(() => setWeekOffset((o) => o + 1), []);
   const nextWeek = useCallback(() => setWeekOffset((o) => Math.max(0, o - 1)), []);
@@ -59,7 +66,7 @@ function App() {
           onSelectType={timer.selectType}
           onTogglePalette={togglePalette}
           onClosePalette={closePalette}
-          onSelectPreset={accent.selectPreset}
+          onSelectPreset={selectPreset}
           onWheelChange={accent.setFromWheel}
           onToggleAmbient={ambient.toggleAmbient}
           onGoStats={goStats}
