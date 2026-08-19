@@ -1,4 +1,4 @@
-import { ArrowLeft } from '@phosphor-icons/react';
+import { ArrowLeft, SignOut } from '@phosphor-icons/react';
 import type { MonthDay, WeekDayCount } from '../hooks/useSessionHistory';
 import { WeekChart } from './WeekChart';
 import { MonthHeatmap } from './MonthHeatmap';
@@ -19,6 +19,7 @@ interface Props {
   onPrevMonth: () => void;
   onNextMonth: () => void;
   onDayClick: (day: number) => void;
+  onSignOut: () => void;
 }
 
 export function StatsScreen(props: Props) {
@@ -38,18 +39,29 @@ export function StatsScreen(props: Props) {
     onPrevMonth,
     onNextMonth,
     onDayClick,
+    onSignOut,
   } = props;
 
   return (
     <div style={{ position: 'relative', minHeight: '100dvh', display: 'flex', flexDirection: 'column', padding: '28px 22px 24px', boxSizing: 'border-box' }}>
-      <button
-        type="button"
-        onClick={onGoTimer}
-        aria-label="Back to timer"
-        style={{ display: 'inline-flex', marginBottom: 20, cursor: 'pointer', width: 32, background: 'none', border: 'none', padding: 0 }}
-      >
-        <ArrowLeft size={22} color="#1A1A1A" />
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <button
+          type="button"
+          onClick={onGoTimer}
+          aria-label="Back to timer"
+          style={{ display: 'inline-flex', cursor: 'pointer', width: 32, background: 'none', border: 'none', padding: 0 }}
+        >
+          <ArrowLeft size={22} color="#1A1A1A" />
+        </button>
+        <button
+          type="button"
+          onClick={onSignOut}
+          aria-label="Sign out"
+          style={{ display: 'inline-flex', cursor: 'pointer', width: 32, justifyContent: 'flex-end', background: 'none', border: 'none', padding: 0 }}
+        >
+          <SignOut size={20} color="#8A7B70" />
+        </button>
+      </div>
 
       <div style={{ background: '#1A1A1A', borderRadius: 22, padding: '20px 18px', marginBottom: 16 }}>
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: 'rgba(251,243,236,0.55)', marginBottom: 10 }}>

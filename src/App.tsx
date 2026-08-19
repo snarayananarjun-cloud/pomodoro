@@ -4,11 +4,13 @@ import { useAccentColor } from './hooks/useAccentColor';
 import { useSessionHistory } from './hooks/useSessionHistory';
 import { useTimer } from './hooks/useTimer';
 import { useAmbient } from './hooks/useAmbient';
+import { useAuth } from './hooks/useAuth';
 import { dayModalTitle } from './lib/date';
 import { TimerScreen } from './components/TimerScreen';
 import { StatsScreen } from './components/StatsScreen';
 import { SessionCompleteModal } from './components/SessionCompleteModal';
 import { DayDetailModal } from './components/DayDetailModal';
+import { SignInScreen } from './components/SignInScreen';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('timer');
@@ -17,8 +19,10 @@ function App() {
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
-  const accent = useAccentColor();
-  const history = useSessionHistory();
+  const auth = useAuth();
+  const userId = auth.user?.id ?? null;
+  const accent = useAccentColor(userId);
+  const history = useSessionHistory(userId);
   const ambient = useAmbient();
   const timer = useTimer({ onLogSession: history.addSession });
 
@@ -43,6 +47,18 @@ function App() {
   const closeDayModal = useCallback(() => setSelectedDay(null), []);
 
   const selectedDaySessions = selectedDay != null ? monthData.days.find((d) => d.day === selectedDay)?.sessions ?? [] : [];
+
+  if (auth.loading) {
+    return <div className="app-shell" />;
+  }
+
+  if (!auth.user) {
+    return (
+      <div className="app-shell">
+        <SignInScreen onSignIn={auth.signInWithEmail} />
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -88,6 +104,7 @@ function App() {
           onPrevMonth={prevMonth}
           onNextMonth={nextMonth}
           onDayClick={setSelectedDay}
+          onSignOut={auth.signOut}
         />
       )}
 

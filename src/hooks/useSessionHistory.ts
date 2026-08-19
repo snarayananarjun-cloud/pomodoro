@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { FocusSession } from '../types';
-import { loadSessions, saveSessions } from '../lib/storage';
+import { supabase } from '../lib/supabaseClient';
 import {
   addDays,
   dateKey,
@@ -27,16 +27,63 @@ export interface MonthDay {
   sessions: FocusSession[];
 }
 
-export function useSessionHistory() {
-  const [sessions, setSessions] = useState<FocusSession[]>(() => loadSessions());
+interface SessionRow {
+  id: string;
+  completed_at: string;
+  note: string | null;
+}
 
-  const addSession = useCallback((note: string | null) => {
-    setSessions((prev) => {
-      const next = [...prev, { id: makeId(), completedAt: Date.now(), note }];
-      saveSessions(next);
-      return next;
-    });
-  }, []);
+/** Reads/writes the signed-in user's focus-session log from the `focus_sessions` table. */
+export function useSessionHistory(userId: string | null) {
+  const [sessions, setSessions] = useState<FocusSession[]>([]);
+
+  useEffect(() => {
+    if (!userId) {
+      setSessions([]);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from('focus_sessions')
+      .select('id, completed_at, note')
+      .eq('user_id', userId)
+      .order('completed_at', { ascending: true })
+      .then(({ data, error }: { data: SessionRow[] | null; error: { message: string } | null }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error('Failed to load focus sessions', error);
+          return;
+        }
+        setSessions((data ?? []).map((row) => ({ id: row.id, completedAt: new Date(row.completed_at).getTime(), note: row.note })));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const addSession = useCallback(
+    (note: string | null) => {
+      if (!userId) return;
+      const completedAt = Date.now();
+      const optimisticId = makeId();
+      setSessions((prev) => [...prev, { id: optimisticId, completedAt, note }]);
+      supabase
+        .from('focus_sessions')
+        .insert({ user_id: userId, completed_at: new Date(completedAt).toISOString(), note })
+        .select('id')
+        .single()
+        .then(({ data, error }: { data: { id: string } | null; error: { message: string } | null }) => {
+          if (error) {
+            console.error('Failed to save focus session', error);
+            return;
+          }
+          if (data) {
+            setSessions((prev) => prev.map((s) => (s.id === optimisticId ? { ...s, id: data.id } : s)));
+          }
+        });
+    },
+    [userId],
+  );
 
   const today = dateKey(new Date());
   const sessionsToday = sessions.filter((s) => dateKey(new Date(s.completedAt)) === today).length;

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode, Ref } from 'react';
-import { ChartBar, Pause, Play, X } from '@phosphor-icons/react';
+import { ArrowCounterClockwise, ChartBar, Pause, Play, X } from '@phosphor-icons/react';
 import type { SessionType, TimerPhase } from '../types';
 import { DURATIONS, SESSION_GOAL } from '../hooks/useTimer';
 import { SessionTypeDropdown } from './SessionTypeDropdown';
@@ -230,10 +230,13 @@ function HeaderRow({
 
 interface PlayAndAmbientProps {
   running: boolean;
+  /** Stopped, but with progress mid-session — not a fresh idle start. */
+  paused: boolean;
   accentColor: string;
   ambientOn: boolean;
   onToggleRunning: () => void;
   onToggleAmbient: () => void;
+  onReset?: () => void;
   buttonRef?: Ref<HTMLDivElement>;
   /** false for the cream overlay's copy — same footprint, nothing painted or clickable. */
   interactive: boolean;
@@ -244,9 +247,11 @@ interface PlayAndAmbientProps {
  * overlay, purely so the overlay's flex column has an identically-sized block in
  * this slot — the play icon is already always-white and always inside the fill
  * circle, and the ambient pill sits on its own opaque card, so neither actually
- * needs a cream twin, only the space it occupies.
+ * needs a cream twin, only the space it occupies. The reset button only ever
+ * shows in the interactive copy, while paused — it never appears in the cream
+ * overlay (which only renders while running).
  */
-function PlayAndAmbient({ running, accentColor, ambientOn, onToggleRunning, onToggleAmbient, buttonRef, interactive }: PlayAndAmbientProps) {
+function PlayAndAmbient({ running, paused, accentColor, ambientOn, onToggleRunning, onToggleAmbient, onReset, buttonRef, interactive }: PlayAndAmbientProps) {
   return (
     <div
       style={{
@@ -258,22 +263,46 @@ function PlayAndAmbient({ running, accentColor, ambientOn, onToggleRunning, onTo
         visibility: interactive ? 'visible' : 'hidden',
       }}
     >
-      <div
-        ref={interactive ? buttonRef : undefined}
-        onClick={interactive ? onToggleRunning : undefined}
-        role={interactive ? 'button' : undefined}
-        aria-label={interactive ? (running ? 'Pause session' : 'Start session') : undefined}
-        style={{
-          width: BTN_SIZE,
-          height: BTN_SIZE,
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: interactive ? 'pointer' : 'default',
-        }}
-      >
-        {running ? <Pause weight="fill" size={22} color="#FFFFFF" /> : <Play weight="fill" size={22} color="#FFFFFF" />}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        {interactive && paused && (
+          <button
+            type="button"
+            onClick={onReset}
+            aria-label="Reset session"
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: '50%',
+              background: '#EFE4D8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              border: 'none',
+              flexShrink: 0,
+            }}
+          >
+            <ArrowCounterClockwise size={19} color={accentColor} />
+          </button>
+        )}
+        <div
+          ref={interactive ? buttonRef : undefined}
+          onClick={interactive ? onToggleRunning : undefined}
+          role={interactive ? 'button' : undefined}
+          aria-label={interactive ? (running ? 'Pause session' : 'Start session') : undefined}
+          style={{
+            width: BTN_SIZE,
+            height: BTN_SIZE,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: interactive ? 'pointer' : 'default',
+            flexShrink: 0,
+          }}
+        >
+          {running ? <Pause weight="fill" size={22} color="#FFFFFF" /> : <Play weight="fill" size={22} color="#FFFFFF" />}
+        </div>
       </div>
       <AmbientPill accentColor={accentColor} ambientOn={ambientOn} onToggle={interactive ? onToggleAmbient : () => {}} />
     </div>
@@ -324,6 +353,7 @@ export function TimerScreen(props: Props) {
 
   const total = DURATIONS[sessionType];
   const fraction = total > 0 ? remaining / total : 0;
+  const paused = !running && remaining > 0 && remaining !== total;
   const radius = !measured ? 0 : running ? SMALL_R + (anchor.maxR - SMALL_R) * fraction : SMALL_R;
   const clipTransition = !settled ? 'none' : phase === 'expanding' ? 'clip-path 0.4s cubic-bezier(0.22,1,0.36,1)' : 'clip-path 0.95s linear';
   const clipPath = `circle(${radius}px at ${anchor.x}px ${anchor.y}px)`;
@@ -365,10 +395,12 @@ export function TimerScreen(props: Props) {
         <div style={{ flex: 1 }} />
         <PlayAndAmbient
           running={running}
+          paused={paused}
           accentColor={accentColor}
           ambientOn={ambientOn}
           onToggleRunning={onToggleRunning}
           onToggleAmbient={onToggleAmbient}
+          onReset={onStopSession}
           buttonRef={buttonRef}
           interactive
         />
@@ -388,6 +420,7 @@ export function TimerScreen(props: Props) {
           <div style={{ flex: 1 }} />
           <PlayAndAmbient
             running={running}
+            paused={false}
             accentColor={accentColor}
             ambientOn={ambientOn}
             onToggleRunning={onToggleRunning}

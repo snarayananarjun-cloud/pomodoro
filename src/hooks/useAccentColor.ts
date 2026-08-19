@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { loadAccent, saveAccent } from '../lib/storage';
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 export const ACCENT_PRESETS = ['#C97B63', '#7A8B7F', '#5B7A9C', '#8B6BA8', '#3A3A3A', '#B0654A'];
 const DEFAULT_ACCENT = { color: '#C97B63', hue: 16, sat: 46 };
@@ -25,22 +25,71 @@ function hexToHsl(hex: string): { h: number; s: number } | null {
   return { h: Math.round(h), s: Math.round(s * 100) };
 }
 
-export function useAccentColor() {
-  const [accent, setAccent] = useState(() => loadAccent() || DEFAULT_ACCENT);
+/** Reads/writes the signed-in user's accent preference from the `profiles` table. */
+export function useAccentColor(userId: string | null) {
+  const [accent, setAccent] = useState(DEFAULT_ACCENT);
 
-  const selectPreset = useCallback((color: string) => {
-    const hs = hexToHsl(color) ?? { h: DEFAULT_ACCENT.hue, s: DEFAULT_ACCENT.sat };
-    const next = { color, hue: hs.h, sat: hs.s };
-    setAccent(next);
-    saveAccent(next);
-  }, []);
+  useEffect(() => {
+    if (!userId) {
+      setAccent(DEFAULT_ACCENT);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from('profiles')
+      .select('accent_color, accent_hue, accent_sat')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error('Failed to load accent color', error);
+          return;
+        }
+        if (data) {
+          setAccent({ color: data.accent_color, hue: data.accent_hue, sat: data.accent_sat });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
-  const setFromWheel = useCallback((hue: number, sat: number) => {
-    const color = `hsl(${hue} ${sat}% 55%)`;
-    const next = { color, hue, sat };
-    setAccent(next);
-    saveAccent(next);
-  }, []);
+  const persist = useCallback(
+    (next: typeof DEFAULT_ACCENT) => {
+      if (!userId) return;
+      supabase
+        .from('profiles')
+        .upsert(
+          { user_id: userId, accent_color: next.color, accent_hue: next.hue, accent_sat: next.sat, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id' },
+        )
+        .then(({ error }) => {
+          if (error) console.error('Failed to save accent color', error);
+        });
+    },
+    [userId],
+  );
+
+  const selectPreset = useCallback(
+    (color: string) => {
+      const hs = hexToHsl(color) ?? { h: DEFAULT_ACCENT.hue, s: DEFAULT_ACCENT.sat };
+      const next = { color, hue: hs.h, sat: hs.s };
+      setAccent(next);
+      persist(next);
+    },
+    [persist],
+  );
+
+  const setFromWheel = useCallback(
+    (hue: number, sat: number) => {
+      const color = `hsl(${hue} ${sat}% 55%)`;
+      const next = { color, hue, sat };
+      setAccent(next);
+      persist(next);
+    },
+    [persist],
+  );
 
   return {
     accentColor: accent.color,
