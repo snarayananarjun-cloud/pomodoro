@@ -43,8 +43,21 @@ export function SignInScreen({ onSignIn }: Props) {
         <EnvelopeSimple size={20} color="#FFFFFF" />
       </div>
 
-      <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 26, color: '#1A1A1A', marginBottom: 8, textAlign: 'center' }}>
-        Push to Live Now
+      <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 26, color: '#1A1A1A', textAlign: 'center' }}>
+        Pomodoro
+      </div>
+      <div
+        style={{
+          fontFamily: "'Manrope', sans-serif",
+          fontWeight: 600,
+          fontSize: 13,
+          letterSpacing: 0.3,
+          color: DEFAULT_ACCENT,
+          textTransform: 'uppercase',
+          marginBottom: 20,
+        }}
+      >
+        less click more focus
       </div>
 
       {status === 'sent' ? (
