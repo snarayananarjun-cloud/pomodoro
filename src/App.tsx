@@ -4,13 +4,12 @@ import { useAccentColor } from './hooks/useAccentColor';
 import { useSessionHistory } from './hooks/useSessionHistory';
 import { useTimer } from './hooks/useTimer';
 import { useAmbient } from './hooks/useAmbient';
-import { useAuth } from './hooks/useAuth';
+import { useDeviceSession } from './hooks/useDeviceSession';
 import { dayModalTitle } from './lib/date';
 import { TimerScreen } from './components/TimerScreen';
 import { StatsScreen } from './components/StatsScreen';
 import { SessionCompleteModal } from './components/SessionCompleteModal';
 import { DayDetailModal } from './components/DayDetailModal';
-import { SignInScreen } from './components/SignInScreen';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('timer');
@@ -19,10 +18,9 @@ function App() {
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
-  const auth = useAuth();
-  const userId = auth.user?.id ?? null;
-  const accent = useAccentColor(userId);
-  const history = useSessionHistory(userId);
+  const device = useDeviceSession();
+  const accent = useAccentColor(device.userId);
+  const history = useSessionHistory(device.userId);
   const ambient = useAmbient();
   const timer = useTimer({ onLogSession: history.addSession });
 
@@ -48,29 +46,21 @@ function App() {
 
   const selectedDaySessions = selectedDay != null ? monthData.days.find((d) => d.day === selectedDay)?.sessions ?? [] : [];
 
-  if (auth.configError) {
+  if (device.error) {
     return (
       <div className="app-shell">
         <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32, boxSizing: 'border-box' }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: '#8A7B70', textAlign: 'center', maxWidth: 300, lineHeight: 1.6 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: '#1A1A1A', marginBottom: 8 }}>Setup needed</div>
-            {auth.configError}
+            {device.error}
           </div>
         </div>
       </div>
     );
   }
 
-  if (auth.loading) {
+  if (device.loading) {
     return <div className="app-shell" />;
-  }
-
-  if (!auth.user) {
-    return (
-      <div className="app-shell">
-        <SignInScreen onSignIn={auth.signInWithEmail} />
-      </div>
-    );
   }
 
   return (
@@ -117,7 +107,6 @@ function App() {
           onPrevMonth={prevMonth}
           onNextMonth={nextMonth}
           onDayClick={setSelectedDay}
-          onSignOut={auth.signOut}
         />
       )}
 

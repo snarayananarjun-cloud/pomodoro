@@ -263,13 +263,22 @@ function PlayAndAmbient({ running, paused, accentColor, ambientOn, onToggleRunni
         visibility: interactive ? 'visible' : 'hidden',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+      {/* The play button's own position must never move — the radial fill's anchor
+          is measured from it, so anything that shifted it here would desync the
+          circle from the icon. The reset button is positioned absolutely off its
+          left edge instead of sitting beside it in flow, so it can appear/disappear
+          without nudging the button (and therefore the circle) sideways. */}
+      <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
         {interactive && paused && (
           <button
             type="button"
             onClick={onReset}
             aria-label="Reset session"
             style={{
+              position: 'absolute',
+              top: '50%',
+              right: `calc(100% + 16px)`,
+              transform: 'translateY(-50%)',
               width: 48,
               height: 48,
               borderRadius: '50%',
@@ -279,7 +288,6 @@ function PlayAndAmbient({ running, paused, accentColor, ambientOn, onToggleRunni
               justifyContent: 'center',
               cursor: 'pointer',
               border: 'none',
-              flexShrink: 0,
             }}
           >
             <ArrowCounterClockwise size={19} color={accentColor} />
